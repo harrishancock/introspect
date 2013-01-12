@@ -2,7 +2,42 @@
 
 #include <type_traits>
 #include <functional>
+#include <tuple>
 #include <memory>
+
+template <typename Return, typename... Args>
+struct uncurry;
+
+template <typename Return, typename... Args>
+struct uncurry<Return(Args...)> {
+    template <typename Func>
+    uncurry (const Func& func) : m_func(func) {
+    }
+
+    Return operator() (const std::tuple<Args...>& args) {
+        return call<sizeof...(Args)>(args);
+    }
+
+private:
+    /* Use enable_if magic to simulate partial specialization of a function
+     * template. */
+    template <unsigned int N, typename... Unpacked>
+    typename std::enable_if<0 != N, Return>::type
+    call (const std::tuple<Args...>& args, Unpacked&&... unpacked) {
+        return call<N-1>(args, std::get<N-1>(args),
+                std::forward<Unpacked>(unpacked)...);
+    }
+
+    template <unsigned int N, typename... Unpacked>
+    typename std::enable_if<0 == N, Return>::type
+    call (const std::tuple<Args...>&, Unpacked&&... unpacked) {
+        return m_func(std::forward<Unpacked>(unpacked)...);
+    }
+
+    std::function<Return(Args...)> m_func;
+};
+
+//////////////////////////////////////////////////////////////////////////////
 
 class invoker_base {
 public:
@@ -16,14 +51,17 @@ class invoker;
 template <typename... Args>
 class invoker<void(Args...)> : public invoker_base {
 public:
-    template <typename Func>
-    invoker (Func func) : m_func(func) { }
+    invoker (void (*func)(Args...)) : m_func(func) {
+        /* something? */
+    }
 
     void invoke (const char *args) override {
         m_func();
     }
 
 private:
+    using args_tuple = std::tuple<Args...>;
+
     std::function<void(Args...)> m_func;
 };
 
@@ -65,4 +103,8 @@ int main () {
     any_invoker bar_inv { bar };
     bar_inv.invoke("");
 #endif
+
+    uncurry<int()> uncurried_bar { bar };
+    auto i = uncurried_bar(std::tuple<>());
+    printf("uncurried function returned: %d\n", i);
 }
