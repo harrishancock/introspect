@@ -38,9 +38,15 @@
             );  \
     }
 
-#define AS_TUPLE(STRUCT, ATTRIBUTE_SEQ) \
+#define AS_TUPLE_UNSAFE(STRUCT, ATTRIBUTE_SEQ) \
     AS_TUPLE_def(, STRUCT, &, ATTRIBUTE_SEQ, AS_TUPLE_ref_type, AS_TUPLE_ref_value) \
     AS_TUPLE_def(const, STRUCT, &, ATTRIBUTE_SEQ, AS_TUPLE_cref_type, AS_TUPLE_cref_value) \
     AS_TUPLE_def(, STRUCT, &&, ATTRIBUTE_SEQ, AS_TUPLE_move_type, AS_TUPLE_move_value)
+
+#define AS_TUPLE(STRUCT, ATTRIBUTE_SEQ) \
+    AS_TUPLE_UNSAFE(STRUCT, ATTRIBUTE_SEQ) \
+    static_assert(sizeof(STRUCT) <= sizeof(decltype(as_tuple(std::declval<STRUCT>()))), \
+            "struct/tuple size mismatch, did you forget to list all of " \
+            #STRUCT "'s attributes?");
 
 #endif

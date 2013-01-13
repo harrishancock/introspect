@@ -3,44 +3,60 @@
 
 #include "tuple_fold.hpp"
 
-#include <cstdio>
+#include <iostream>
 
 struct to_json_aux {
+    explicit to_json_aux (std::ostream& os) : m_os(os) { }
+
     void start (int n) const {
-        printf("%c ", n ? ',' : '[');
+        m_os << (n ? ", " : "[ ");
     }
 
     int operator() (int n, char c) const {
         start(n);
-        printf("\"%c\"", c);
+        m_os << '"' << c << '"';
         return n + 1;
     }
 
     int operator() (int n, int i) const {
         start(n);
-        printf("%i", i);
+        m_os << i;
+        return n + 1;
+    }
+
+    int operator() (int n, float f) const {
+        start(n);
+        m_os << f;
         return n + 1;
     }
 
     int operator() (int n, double d) const {
         start(n);
-        printf("%f", d);
+        m_os << d;
+        return n + 1;
+    }
+
+    template <typename... Args>
+    int operator() (int n, const std::tuple<Args...>& value) const {
+        start(n);
+        foldl(to_json_aux(m_os), 0, value);
+        m_os << " ]";
         return n + 1;
     }
 
     template <typename T>
     int operator() (int n, const T& value) const {
-        start(n);
-        foldl(to_json_aux(), 0, value);
-        printf(" ]");
-        return n + 1;
+        return (*this)(n, as_tuple(value));
     }
+
+private:
+    std::ostream& m_os;
 };
 
 template <typename T>
-void to_json (const T& t) {
-    foldl(to_json_aux(), 0, t);
-    printf(" ]\n");
+void to_json (std::ostream& os, const T& t) {
+    foldl(to_json_aux(os), 0, t);
+    os << " ]\n";
 }
 
 #endif
