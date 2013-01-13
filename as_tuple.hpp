@@ -6,28 +6,6 @@
 #include <type_traits>
 #include <utility>
 
-#if 0
-inline std::tuple<std::add_lvalue_reference<decltype(foo::i)>::type,
-                  std::add_lvalue_reference<decltype(foo::d)>::type>
-as_tuple (foo& s) {
-    printf("as_tuple(foo&)\n");
-    return std::make_tuple(std::ref(s.i), std::ref(s.d));
-}
-
-inline std::tuple<decltype(foo::i), decltype(foo::d)>
-as_tuple (foo&& s) {
-    printf("as_tuple(foo&&)\n");
-    return std::make_tuple(std::move(s.i), std::move(s.d));
-}
-
-inline std::tuple<std::add_lvalue_reference<std::add_const<decltype(foo::i)>::type>::type,
-                  std::add_lvalue_reference<std::add_const<decltype(foo::d)>::type>::type>
-as_tuple (const foo& s) {
-    printf("as_tuple(const foo&)\n");
-    return std::make_tuple(std::cref(s.i), std::cref(s.d));
-}
-#endif
-
 #define AS_TUPLE_ref_type(R, STRUCT, ATTRIBUTE) \
     typename std::add_lvalue_reference<decltype(STRUCT::ATTRIBUTE)>::type
 
