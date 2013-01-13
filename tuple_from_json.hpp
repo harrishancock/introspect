@@ -45,7 +45,7 @@ private:
 };
 
 template <typename T>
-void from_json (std::istream& is, const T& t) {
+void from_json (std::istream& is, T& t) {
     foldl(from_json_aux(is), 0, t);
     char c;
     is >> c;
