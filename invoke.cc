@@ -1,4 +1,6 @@
 #include "uncurry.hpp"
+#include "tuple_from_json.hpp"
+#include "as_tuple.hpp"
 
 #include <cstdio>
 
@@ -6,6 +8,8 @@
 #include <functional>
 #include <tuple>
 #include <memory>
+#include <sstream>
+#include <string>
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -26,29 +30,35 @@ public:
     }
 
     void invoke (const char *args) override {
-        m_func();
+        auto t = std::make_tuple(Args()...);
+        if (sizeof...(Args)) {
+            std::stringstream ss (args, std::stringstream::in);
+            from_json(ss, t);
+        }
+        m_func(t);
     }
 
 private:
-    using args_tuple = std::tuple<Args...>;
-
-    std::function<void(Args...)> m_func;
+    uncurry<void(Args...)> m_func;
 };
 
 class any_invoker {
 public:
     /* function pointers */
-    template <typename... Args>
-    any_invoker (void (*func)(Args...))
-            : m_inv(new invoker<void(Args...)> (func)) { }
+    template <typename Return, typename... Args>
+    any_invoker (Return (*func)(Args...))
+            : m_inv(new invoker<Return(Args...)> (func)) { }
 
+    //typename std::enable_if<void_return, Return>::type
     void invoke (const char *args) {
         m_inv->invoke(args);
     }
 
 #if 0
-    template <typename Return>
-    Return invoke (const char *args) {
+    /* Need to use boost::any for function's return type so this can overload
+     * the base class's */
+    typename std::enable_if<!void_return, Return>::type
+    invoke (const char *args) {
         return m_inv->invoke(args);
     }
 #endif
@@ -61,9 +71,8 @@ void foo () {
     printf("Hello, world!\n");
 }
 
-int bar (int& i) {
-    i++;
-    return i - 1;
+void bar (int i, float j, char k) {
+    printf("bar(%d, %f, %c)\n", i, j, k);
 }
 
 int main () {
@@ -73,7 +82,6 @@ int main () {
 #if 0
     any_invoker bar_inv { bar };
     bar_inv.invoke("");
-#endif
 
     uncurry<int(int&)> uncurried_bar { bar };
 
@@ -82,4 +90,8 @@ int main () {
     auto ret = uncurried_bar(std::make_tuple(std::ref(i)));
     printf("i == %d\n", i);
     printf("uncurried function returned: %d\n", ret);
+#endif
+
+    any_invoker bar_inv { bar };
+    bar_inv.invoke("[ 666, 3.14, c ]");
 }
