@@ -1,3 +1,6 @@
+#ifndef AS_TUPLE_HPP
+#define AS_TUPLE_HPP
+
 #include <boost/preprocessor/seq/enum.hpp>
 #include <boost/preprocessor/seq/transform.hpp>
 
@@ -39,3 +42,5 @@
     AS_TUPLE_def(, STRUCT, &, ATTRIBUTE_SEQ, AS_TUPLE_ref_type, AS_TUPLE_ref_value) \
     AS_TUPLE_def(const, STRUCT, &, ATTRIBUTE_SEQ, AS_TUPLE_cref_type, AS_TUPLE_cref_value) \
     AS_TUPLE_def(, STRUCT, &&, ATTRIBUTE_SEQ, AS_TUPLE_move_type, AS_TUPLE_move_value)
+
+#endif
