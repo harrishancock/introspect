@@ -52,4 +52,12 @@ void from_json (std::istream& is, T& t) {
     assert(']' == c);
 }
 
+template <typename T>
+void from_json (std::istream& is, const T& t) {
+    foldl(from_json_aux(is), 0, t);
+    char c;
+    is >> c;
+    assert(']' == c);
+}
+
 #endif
