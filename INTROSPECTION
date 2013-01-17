@@ -1,0 +1,129 @@
+There are a number of different ways to enable some form of compile-time
+introspection in C++.
+
+== std::tuple ==
+
+Part of the standard C++ library, tuples have their member types encoded in
+their template parameters, which allows metaprogramming based on those
+parameters. It is trivial to implement a fold algorithm on a tuple--others
+follow suit.
+
+It is not necessary for the data structures in question to be actual tuples
+themselves. We can enable a tuple-like interface for arbitrary public data
+members of structs in a couple of different ways.
+
+=== Template Specialization ===
+
+One way is to specialize two templates in the std namespace: tuple_size, and
+tuple_element, which encode a tuple type's size and element types,
+respectively; and also to provide get function definitions in the namespace of
+the struct. All three of these tasks can easily be performed at once with a
+single macro invocation, such as:
+
+struct A {
+    int a;
+    double b;
+};
+AS_TUPLE(A, (a)(b))
+
+Note: the interface just described (tuple_size, tuple_element, and get), form
+only a subset of a full tuple interface. There are also std::swap, relational
+operators, and perhaps more functions which comprise the entire tuple
+interface. Most of these would naturally want to be implemented on a case-by-
+case basis.
+
+I do not think it is legal to provide the get function definitions in the std
+namespace, as they are templated by the library definition as accepting a
+parameter of type tuple<Types...>. Defining get functions which accept any
+other type (i.e., user-defined structs), is therefore function overloading,
+rather than function template specialization, and cannot be done in std. The
+appropriate place for the get functions is therefore in the same namespace as
+the definition of the struct being tuplified--argument-dependent lookup (ADL)
+can then be used to apply structures to the get functions.
+
+This presents two major annoyances:
+- The macro invocation which implements the tuple-like interface must be
+  invoked from the global namespace, so that tuple_size and tuple_element can
+  be specialized appropriately inside namespace std.
+- In the very likely event that a struct is defined in a non-global namespace,
+  the macro must be made explicitly aware of each enclosing namespace, so that
+  the get functions can be placed in their appropriate namespace.
+
+The nice syntax above could then easily become:
+
+namespace bunnies {
+    namespace feet {
+        struct Paw { double width; double height; };
+        /* Many more structures defined ... */
+    }
+}
+AS_TUPLE((bunnies)(feet), Paw, (width)(height))
+
+In addition to the obvious verbosity increase, this has the potential to by
+necessity separate the structure definition from its introspection macro by a
+large amount of vertical space.
+
+I suppose that we could dump the get functions into the global namespace to
+work around the second annoyance. However, polluting the global namespace with
+crap is pretty bad form, and the namespaces would still have to be specified,
+such as:
+
+AS_TUPLE(bunnies::feet::Paw, (width)(height))
+
+The advantage of implementing a tuple-like interface for our data structures is
+obvious: we can implement algorithms which operate on tuples, and they should
+just work out of the box with our user-defined, and introspected, data types.
+
+=== To-Tuple Conversion ===
+
+Another solution which uses tuples is to introduce an as_tuple function which
+converts the data structure into a tuple. This function could again be easily
+defined by a simple macro invocation. Unlike the solution above, this macro
+invocation would have to be done in the same namespace as the structure, as we
+would definitely have to rely on ADL to find the correct function to call at
+compile-time:
+
+namespace bunnies {
+    namespace feet {
+        struct Paw { double width; doule height; };
+        AS_TUPLE(Paw, (width)(height))
+    }
+}
+
+This could, in some circumstances, be a mark against this strategy, but in
+general I think it is an advantage--we can place the introspection code right
+next to the data structure being introspected, easing maintainability.
+
+A disadvantage as compared to above is that we can no longer implement an
+algorithm a single time to operate on tuple objects. We will instead have to
+maintain a distinct case in our algorithms to handle any user-defined type
+which might support our as_tuple function, whose sole purpose is to call
+itself (or more accurately, its tuple overload) passing as_tuple(x) as an
+argument, where x is an object of our user-defined type.
+
+A type trait to inform us whether or not a given type has a valid
+implementation of as_tuple defined would be handy. Such a type trait would
+enable us, combined with a couple std::enable_ifs and a static_assert, to
+perform some much-needed compile-time troubleshooting of improper use.
+Normally, such a type trait would have to be specialized in a particular
+namespace, which would put us back in the situation of having to invoke our
+macro from the global namespace to ensure we got the right results. However,
+since we're relying on ADL to find the correct as_tuple definition, we can use
+some tricks to circumvent this burden:
+
+namespace supports {
+    template <typename T> void as_tuple (T&&);
+    template <typename T>
+    struct fn_as_tuple : std::integral_constant<
+            bool, !std::is_void<decltype(as_tuple(std::declval<T>()))>::value>
+    { };
+}
+
+Since we know that any implementation of as_tuple must return a tuple, any
+implementation which returns void must always be an error. We can now do this:
+
+static_assert(supports::fn_as_tuple<A>::value, "A does not support as_tuple");
+
+== Boost.Fusion ==
+
+A Fusion sequence is very similar to a std::tuple.
