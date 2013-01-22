@@ -1,0 +1,5 @@
+An archive type is complete if it has operations for serializing every builtin
+data type, Container types containing any serializable type, tuples, and
+objects convertible to tuples.
+
+
