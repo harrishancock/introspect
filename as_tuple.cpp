@@ -1,4 +1,4 @@
-#include "as_tuple.hpp"
+#include "as_tuple/as_tuple.hpp"
 #include "tuple_fold.hpp"
 #include "tuple_to_json.hpp"
 #include "tuple_from_json.hpp"
@@ -9,7 +9,6 @@ struct bar {
 };
 
 AS_TUPLE(bar, (x)(y));
-//AS_TUPLE2(bar, (x)(y));
 
 struct foo {
     int i;
@@ -19,7 +18,6 @@ struct foo {
 };
 
 AS_TUPLE(foo, (i)(d)(t)(b));
-//AS_TUPLE2(foo, (i)(d)(t));
 
 struct baz;
 
@@ -31,11 +29,10 @@ int main () {
 
     to_json(std::cout, t);
 
+#if 0
     bar b;
     from_json(std::cin, as_tuple(b));
     to_json(std::cout, as_tuple(b));
-
-    static_assert(supports::supports_as_tuple<foo>::value, "foo does not support as_tuple");
-    static_assert(supports::supports_as_tuple<baz>::value, "baz does not support as_tuple");
+#endif
     return 0;
 }

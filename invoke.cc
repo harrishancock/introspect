@@ -1,4 +1,5 @@
 #include "uncurry.hpp"
+#include "any_function.hpp"
 #include "tuple_from_json.hpp"
 #include "as_tuple.hpp"
 
@@ -12,60 +13,6 @@
 #include <string>
 
 //////////////////////////////////////////////////////////////////////////////
-
-class invoker_base {
-public:
-    virtual ~invoker_base () { }
-    virtual void invoke (const char *args) = 0;
-};
-
-template <typename>
-class invoker;
-
-template <typename... Args>
-class invoker<void(Args...)> : public invoker_base {
-public:
-    invoker (void (*func)(Args...)) : m_func(func) {
-        /* something? */
-    }
-
-    void invoke (const char *args) override {
-        auto t = std::make_tuple(Args()...);
-        if (sizeof...(Args)) {
-            std::stringstream ss (args, std::stringstream::in);
-            from_json(ss, t);
-        }
-        m_func(t);
-    }
-
-private:
-    uncurry<void(Args...)> m_func;
-};
-
-class any_invoker {
-public:
-    /* function pointers */
-    template <typename Return, typename... Args>
-    any_invoker (Return (*func)(Args...))
-            : m_inv(new invoker<Return(Args...)> (func)) { }
-
-    //typename std::enable_if<void_return, Return>::type
-    void invoke (const char *args) {
-        m_inv->invoke(args);
-    }
-
-#if 0
-    /* Need to use boost::any for function's return type so this can overload
-     * the base class's */
-    typename std::enable_if<!void_return, Return>::type
-    invoke (const char *args) {
-        return m_inv->invoke(args);
-    }
-#endif
-
-private:
-    std::unique_ptr<invoker_base> m_inv;
-};
 
 void foo () {
     printf("Hello, world!\n");
