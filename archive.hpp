@@ -66,75 +66,86 @@ struct archive {
 };
 
 /**
- * An archive which serializes to a format suitable for data interchange over
- * a network. In particular, the fundamental types are serialized in network-
- * byte order, with insertion operations using the lower /n/ bits of the type,
- * where /n/ is the minimum width of bits guaranteed by the C++ standard. It
- * is therefore a run-time error to pass a value that is unrepresentable by /n/
- * bits to the insertion operators, even if the local implementation 
  */
-struct binary_network_archive : archive {
-    binary_network_archive (std::stringstream& ss) : m_ss(ss) { }
+template <typename... Policies>
+struct typesetter : archive, Policies... {
+    typesetter (archive&& ar) : m_ar(ar) { }
+
+    template <typename From, typename To>
+    struct policy {
+    protected:
+        static To cast (From f) {
+            printf("static_cast<%s>(%s)\n", typeid(To).name(), typeid(From).name());
+            return static_cast<To>(f);
+        }
+    };
 
     /*
      * Fundamental insertion operators.
      */
 
-    archive& operator<< (bool) override;
+    archive& operator<< (bool x) override { m_ar << cast(x); }
+    archive& operator<< (char x) override { m_ar << cast(x); }
+    archive& operator<< (signed char) override { m_ar << cast(x); }
+    archive& operator<< (unsigned char) override { m_ar << cast(x); }
 
-    archive& operator<< (char) override;
-    archive& operator<< (signed char) override;
-    archive& operator<< (unsigned char) override;
+    archive& operator<< (wchar_t) override { m_ar << cast(x); }
+    archive& operator<< (char16_t) override { m_ar << cast(x); }
+    archive& operator<< (char32_t) override { m_ar << cast(x); }
 
-    archive& operator<< (wchar_t) override;
-    archive& operator<< (char16_t) override;
-    archive& operator<< (char32_t) override;
+    archive& operator<< (short int) override { m_ar << cast(x); }
+    archive& operator<< (unsigned short int) override { m_ar << cast(x); }
 
-    archive& operator<< (short int) override;
-    archive& operator<< (unsigned short int) override;
+    archive& operator<< (int) override { m_ar << cast(x); }
+    archive& operator<< (unsigned int) override { m_ar << cast(x); }
 
-    archive& operator<< (int) override;
-    archive& operator<< (unsigned int) override;
+    archive& operator<< (long int) override { m_ar << cast(x); }
+    archive& operator<< (unsigned long int) override { m_ar << cast(x); }
 
-    archive& operator<< (long int) override;
-    archive& operator<< (unsigned long int) override;
+    archive& operator<< (long long int) override { m_ar << cast(x); }
+    archive& operator<< (unsigned long long int) override { m_ar << cast(x); }
 
-    archive& operator<< (long long int) override;
-    archive& operator<< (unsigned long long int) override;
-
-    archive& operator<< (float) override;
-    archive& operator<< (double) override;
-    archive& operator<< (long double) override;
+    archive& operator<< (float) override { m_ar << cast(x); }
+    archive& operator<< (double) override { m_ar << cast(x); }
+    archive& operator<< (long double) override { m_ar << cast(x); }
 
     /*
      * Fundamental extraction operators.
      */
 
-    virtual archive& operator>> (bool&) override;
+    archive& operator>> (bool&) override;
 
-    virtual archive& operator>> (char&) override;
-    virtual archive& operator>> (signed char&) override;
-    virtual archive& operator>> (unsigned char&) override;
+    archive& operator>> (char&) override;
+    archive& operator>> (signed char&) override;
+    archive& operator>> (unsigned char&) override;
 
-    virtual archive& operator>> (wchar_t&) override;
-    virtual archive& operator>> (char16_t&) override;
-    virtual archive& operator>> (char32_t&) override;
+    archive& operator>> (wchar_t&) override;
+    archive& operator>> (char16_t&) override;
+    archive& operator>> (char32_t&) override;
 
-    virtual archive& operator>> (short int&) override;
-    virtual archive& operator>> (unsigned short int&) override;
+    archive& operator>> (short int&) override;
+    archive& operator>> (unsigned short int&) override;
 
-    virtual archive& operator>> (int&) override;
-    virtual archive& operator>> (unsigned int&) override;
+    archive& operator>> (int&) override;
+    archive& operator>> (unsigned int&) override;
 
-    virtual archive& operator>> (long int&) override;
-    virtual archive& operator>> (unsigned long int&) override;
+    archive& operator>> (long int&) override;
+    archive& operator>> (unsigned long int&) override;
 
-    virtual archive& operator>> (long long int&) override;
-    virtual archive& operator>> (unsigned long long int&) override;
+    archive& operator>> (long long int&) override;
+    archive& operator>> (unsigned long long int&) override;
 
-    virtual archive& operator>> (float&) override;
-    virtual archive& operator>> (double&) override;
-    virtual archive& operator>> (long double&) override;
+    archive& operator>> (float&) override;
+    archive& operator>> (double&) override;
+    archive& operator>> (long double&) override;
+
+private:
+    template <typename T>
+    static T cast (T t) {
+        printf("%s\n", typeid(T).name());
+        return t;
+    }
+
 };
 
 
