@@ -1,6 +1,12 @@
 #ifndef ARCHIVE_HPP
 #define ARCHIVE_HPP
 
+template <typename T, unsigned int W>
+struct width_policy {
+    using type = T;
+    constexpr static unsigned int value = W;
+};
+
 struct archive {
     virtual ~archive () { }
 
