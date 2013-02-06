@@ -6,7 +6,7 @@
 class function_base {
 public:
     virtual ~function_base () { }
-    virtual void operator() (archive&&) = 0;
+    virtual boost::any operator() (archive&&) = 0;
 };
 
 template <typename>

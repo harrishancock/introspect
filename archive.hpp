@@ -1,13 +1,8 @@
 #ifndef ARCHIVE_HPP
 #define ARCHIVE_HPP
 
-template <typename T, unsigned int W>
-struct width_policy {
-    using type = T;
-    constexpr static unsigned int value = W;
-};
-
-struct archive {
+class archive {
+public:
     virtual ~archive () { }
 
     /*
@@ -71,89 +66,114 @@ struct archive {
     virtual archive& operator>> (long double&) = 0;
 };
 
-/**
- */
-template <typename... Policies>
-struct typesetter : archive, Policies... {
-    typesetter (archive&& ar) : m_ar(ar) { }
-
-    template <typename From, typename To>
-    struct policy {
-    protected:
-        static To cast (From f) {
-            printf("static_cast<%s>(%s)\n", typeid(To).name(), typeid(From).name());
-            return static_cast<To>(f);
-        }
-    };
+template <typename CastMap>
+class cast_adapter : public archive {
+public:
+    cast_adapter (std::shared_ptr<archive> ar) : m_ar(ar) { }
 
     /*
      * Fundamental insertion operators.
      */
 
-    archive& operator<< (bool x) override { m_ar << cast(x); }
-    archive& operator<< (char x) override { m_ar << cast(x); }
-    archive& operator<< (signed char) override { m_ar << cast(x); }
-    archive& operator<< (unsigned char) override { m_ar << cast(x); }
+    // TODO check for overflow
+#define INSERTION_OPERATOR(TYPE) \
+    archive& operator<< (TYPE x) override { \
+        using type = lookup<CastMap, TYPE, TYPE>; \
+        *m_ar << static_cast<type>(x); \
+        return *this; \
+    }
 
-    archive& operator<< (wchar_t) override { m_ar << cast(x); }
-    archive& operator<< (char16_t) override { m_ar << cast(x); }
-    archive& operator<< (char32_t) override { m_ar << cast(x); }
+    INSERTION_OPERATOR(bool)
+    INSERTION_OPERATOR(char)
+    INSERTION_OPERATOR(signed char)
+    INSERTION_OPERATOR(unsigned char)
 
-    archive& operator<< (short int) override { m_ar << cast(x); }
-    archive& operator<< (unsigned short int) override { m_ar << cast(x); }
+    INSERTION_OPERATOR(wchar_t)
+    INSERTION_OPERATOR(char16_t)
+    INSERTION_OPERATOR(char32_t)
 
-    archive& operator<< (int) override { m_ar << cast(x); }
-    archive& operator<< (unsigned int) override { m_ar << cast(x); }
+    INSERTION_OPERATOR(short int)
+    INSERTION_OPERATOR(unsigned short int)
 
-    archive& operator<< (long int) override { m_ar << cast(x); }
-    archive& operator<< (unsigned long int) override { m_ar << cast(x); }
+    INSERTION_OPERATOR(int)
+    INSERTION_OPERATOR(unsigned int)
 
-    archive& operator<< (long long int) override { m_ar << cast(x); }
-    archive& operator<< (unsigned long long int) override { m_ar << cast(x); }
+    INSERTION_OPERATOR(long int)
+    INSERTION_OPERATOR(unsigned long int)
 
-    archive& operator<< (float) override { m_ar << cast(x); }
-    archive& operator<< (double) override { m_ar << cast(x); }
-    archive& operator<< (long double) override { m_ar << cast(x); }
+    INSERTION_OPERATOR(long long int)
+    INSERTION_OPERATOR(unsigned long long int)
+
+    INSERTION_OPERATOR(float)
+    INSERTION_OPERATOR(double)
+    INSERTION_OPERATOR(long double)
+
+#undef INSERTION_OPERATOR
 
     /*
      * Fundamental extraction operators.
      */
 
-    archive& operator>> (bool&) override;
-
-    archive& operator>> (char&) override;
-    archive& operator>> (signed char&) override;
-    archive& operator>> (unsigned char&) override;
-
-    archive& operator>> (wchar_t&) override;
-    archive& operator>> (char16_t&) override;
-    archive& operator>> (char32_t&) override;
-
-    archive& operator>> (short int&) override;
-    archive& operator>> (unsigned short int&) override;
-
-    archive& operator>> (int&) override;
-    archive& operator>> (unsigned int&) override;
-
-    archive& operator>> (long int&) override;
-    archive& operator>> (unsigned long int&) override;
-
-    archive& operator>> (long long int&) override;
-    archive& operator>> (unsigned long long int&) override;
-
-    archive& operator>> (float&) override;
-    archive& operator>> (double&) override;
-    archive& operator>> (long double&) override;
-
-private:
-    template <typename T>
-    static T cast (T t) {
-        printf("%s\n", typeid(T).name());
-        return t;
+#define EXTRACTION_OPERATOR(TYPE) \
+    archive& operator>> (TYPE&) override { \
+        using type = lookup<CastMap, TYPE, TYPE>; \
+        type a; \
+        *m_ar >> a; \
+        x = static_cast<type>(a); \
+        return *this; \
     }
 
+    EXTRACTION_OPERATOR(bool)
+
+    EXTRACTION_OPERATOR(char)
+    EXTRACTION_OPERATOR(signed char)
+    EXTRACTION_OPERATOR(unsigned char)
+
+    EXTRACTION_OPERATOR(wchar_t)
+    EXTRACTION_OPERATOR(char16_t)
+    EXTRACTION_OPERATOR(char32_t)
+
+    EXTRACTION_OPERATOR(short int)
+    EXTRACTION_OPERATOR(unsigned short int)
+
+    EXTRACTION_OPERATOR(int)
+    EXTRACTION_OPERATOR(unsigned int)
+
+    EXTRACTION_OPERATOR(long int)
+    EXTRACTION_OPERATOR(unsigned long int)
+
+    EXTRACTION_OPERATOR(long long int)
+    EXTRACTION_OPERATOR(unsigned long long int)
+
+    EXTRACTION_OPERATOR(float)
+    EXTRACTION_OPERATOR(double)
+    EXTRACTION_OPERATOR(long double)
+
+#undef EXTRACTION_OPERATOR
+
+private:
+    std::shared_ptr<archive> m_ar;
 };
 
+class string_archive : public archive {
+public:
+    string_archive (const std::string& s) : m_ss(s) { }
 
+#define INSERTION_OPERATOR(TYPE) \
+    archive& operator<< (TYPE x) override { \
+        for (
+    }
+
+private:
+    std::stringstream m_ss;
+};
+
+class any_archive {
+public:
+    any_archive (std::string&& ss) : m_ar(new string_archive (std::forward<std::string>(ss))) { }
+
+private:
+    std::shared_ptr<archive> m_ar;
+};
 
 #endif

@@ -2,4 +2,16 @@ An archive type is complete if it has operations for serializing every builtin
 data type, Container types containing any serializable type, tuples, and
 objects convertible to tuples.
 
+archive << aggregate value
+
+Iterate over the members of the aggregate value and call the insertion operator
+on them.
+
+archive << non-fundamental value
+
+Issue a set of calls to the fundamental insertion operators with data that
+represents the non-fundamental value.
+
+archive << fundamental value
+
 
