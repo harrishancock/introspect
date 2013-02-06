@@ -5,6 +5,10 @@
 
 #include <climits>
 
+/**
+ * Convert a value from network to host byte order, or from host to network
+ * byte order.
+ */
 template <typename T>
 T byteswap (const T value) {
     static_assert(!std::is_same<bool, T>::value,
