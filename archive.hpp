@@ -159,9 +159,13 @@ class string_archive : public archive {
 public:
     string_archive (const std::string& s) : m_ss(s) { }
 
-#define INSERTION_OPERATOR(TYPE) \
+#define INSERTION_OPERATOR_INTEGRAL(TYPE) \
     archive& operator<< (TYPE x) override { \
-        for (
+        TYPE n = byteswap(x); \
+        auto uc_n = reinterpret_cast<unsigned char *>(&n); \
+        for (size_t i = 0; i < sizeof(TYPE); i++) { \
+            m_ss << uc_n[i]; \
+        } \
     }
 
 private:
