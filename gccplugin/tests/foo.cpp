@@ -1,7 +1,5 @@
 #include <cstdio>
 
-namespace foo {
-
 struct [[gnu::reflection(1)]] A {
 public:
     int x;
@@ -11,18 +9,16 @@ public:
     }
 private:
     int i;
-    struct anus;
+    struct [[gnu::reflection(1)]] anus;
 };
 
 enum [[gnu::reflection(1)]] B {
-    B_FOO,
+    B_FOO = 0,
     B_FUZZ
 };
 
-}
-
 int fart () {
-    foo::A a;
+    A a;
     a.hello();
     return 1;
 }

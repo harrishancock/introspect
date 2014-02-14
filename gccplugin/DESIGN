@@ -1,0 +1,19 @@
+Reflection on a union, struct, or class:
+
+    struct [[gnu::reflection(1)]] foo {
+        // ...
+    };
+
+is syntactic sugar for:
+
+    struct foo {
+        static ::__reflection::metaclass __metaclass = {
+            .size = sizeof(foo);
+            .align = alignof(foo);
+            
+        };
+    };
+
+where
+  - the reflected type, foo
+  - all public members

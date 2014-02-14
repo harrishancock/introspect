@@ -1,0 +1,38 @@
+Operations on an ENUMERAL_TYPE:
+  - TYPE_UID:
+  - TYPE_SIZE:
+  - TYPE_SIZE_UNIT:
+  - TYPE_POINTER_TO:
+  - TYPE_REFERENCE_TO:
+  - TYPE_PRECISION:
+  - TYPE_NAME: TYPE_DECL, a possibly artificial enclosing typedef
+  - TYPE_NEXT_VARIANT:
+  - TYPE_MAIN_VARIANT:
+  - TYPE_ATTRIBUTES: TREE_LIST
+    - value: IDENTIFIER_TYPE
+  - TYPE_ALIGN_UNIT:
+  - TYPE_FIELDS: same as TYPE_VALUES, but probably shouldn't use
+  - TYPE_VALUES: TREE_LIST
+    - purpose: IDENTIFIER_TYPE, the enumerated value's name
+    - value: CONST_DECL, the enumerated value's number
+  - ENUM_IS_SCOPED: boolean, if this is an enum class
+  - ENUM_IS_OPAQUE: boolean, ?
+
+Operations on a TREE_LIST:
+  - TREE_PURPOSE: unspecified type, sometimes null
+  - TREE_VALUE: unspecified type, payload
+  - TREE_CHAIN: TREE_LIST, the next node
+
+Operations on a TYPE_DECL:
+  - DECL_SOURCE_FILE:
+  - DECL_SOURCE_LINE:
+  - DECL_ARTIFICIAL: boolean, if this was an artificially generated typedef
+  - DECL_ORIGINAL_TYPE: the main variant of the TREE_TYPE field
+  - TREE_TYPE: the local copy of a type
+  - TREE_PUBLIC: is this type visible outside of file scope
+
+
+Operations on a CONST_DECL:
+  - DECL_SOURCE_FILE:
+  - DECL_SOURCE_LINE:
+  - DECL_INITIAL:
